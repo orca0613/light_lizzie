@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QRadioButton, QButtonGroup)
 from PySide6.QtCore import Qt, Signal
 
-from constants import IS_WHITE_FIRST_KEY, KOMI_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, RULES, KATAGO_SETTING_JSON_PATH
+from constants import IS_WHITE_FIRST_KEY, KOMI_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, RULES, KATAGO_SETTING_JSON_PATH, UPDATE_CYCLE_KEY
 from helper import load_json, update_json
 
 class KatagoSettingDialog(QDialog):
@@ -31,7 +31,7 @@ class KatagoSettingDialog(QDialog):
       rule_layout.addWidget(radio)
       rule_layout.addStretch(2)
     rule_layout.addStretch(1)
-    self.rule_radio_group.idClicked.connect(self.update_rule)
+    self.rule_radio_group.idClicked.connect(self._update_rule)
     layout.addLayout(rule_layout)
 
     # 덤(komi) 레이아웃
@@ -55,11 +55,20 @@ class KatagoSettingDialog(QDialog):
     # 분석 시간 레이아웃
 
     analysis_sec_layout = QHBoxLayout()
-    analysis_sec_layout.addWidget(QLabel("분석 시간 (초)"))
+    analysis_sec_layout.addWidget(QLabel("분석 시간 (sec)"))
     self.as_input = QLineEdit()
     self.as_input.setText(str(self.setting_json[MAX_ANALYSIS_TIME_KEY]))
     analysis_sec_layout.addWidget(self.as_input)
     layout.addLayout(analysis_sec_layout)
+
+    # 갱신 주기 레이아웃
+
+    update_cycle_layout = QHBoxLayout()
+    update_cycle_layout.addWidget(QLabel("갱신 주기 (ms)"))
+    self.uc_input = QLineEdit()
+    self.uc_input.setText(str(self.setting_json[UPDATE_CYCLE_KEY]))
+    update_cycle_layout.addWidget(self.uc_input)
+    layout.addLayout(update_cycle_layout)
     
     # 확인 버튼 (Action Buttons) ---
     btn_layout = QHBoxLayout()
@@ -69,11 +78,11 @@ class KatagoSettingDialog(QDialog):
     layout.addLayout(btn_layout)
 
     # 시그널 연결 (Event Handling)
-    self.cnf_btn.clicked.connect(self.confirm) # 창 닫으면서 'OK' 반환
+    self.cnf_btn.clicked.connect(self._confirm) # 창 닫으면서 'OK' 반환
   
   update_katago_setting_signal = Signal()
 
-  def update_rule(self, idx: int):
+  def _update_rule(self, idx: int):
     self.changed = True
     self.setting_json[RULE_KEY] = RULES[idx]
     komi = 7.5 if idx else 6.5
@@ -88,23 +97,29 @@ class KatagoSettingDialog(QDialog):
     return
   
 
-  def update_setting_json(self, key: str, val: int | str):
+  def _update_setting_json(self, key: str, val: int | str):
     self.changed = True
     self.setting_json[key] = val
     return
   
 
-  def confirm(self):
+  def _check_update(self, key: str, val):
+    if val != self.setting_json[key]:
+      self._update_setting_json(key, val)
+
+
+  def _confirm(self):
     try:
+      komi = float(self.komi_input.text().strip())
       visit_count = int(self.vc_input.text().strip())
       analysis_time = int(self.as_input.text().strip())
-      komi = float(self.komi_input.text().strip())
-      if visit_count != self.setting_json[MAX_VISIT_KEY]:
-        self.update_setting_json(MAX_VISIT_KEY, visit_count)
-      if analysis_time != self.setting_json[MAX_ANALYSIS_TIME_KEY]:
-        self.update_setting_json(MAX_ANALYSIS_TIME_KEY, analysis_time)
-      if komi != self.setting_json[KOMI_KEY]:
-        self.update_setting_json(KOMI_KEY, komi)
+      update_cycle = int(self.uc_input.text().strip())
+
+      self._check_update(KOMI_KEY, komi)
+      self._check_update(MAX_VISIT_KEY, visit_count)
+      self._check_update(MAX_ANALYSIS_TIME_KEY, analysis_time)
+      self._check_update(UPDATE_CYCLE_KEY, update_cycle)
+
     except ValueError:
       # 사용자가 숫자가 아닌 문자(예: "abc")를 입력했을 때 에러 방지 예외처리
       print("올바른 숫자를 입력해주세요.")

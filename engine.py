@@ -1,10 +1,11 @@
 import json
+import queue
 import subprocess
 import threading
 import time
 from typing import Dict
 
-from constants import KOMI_KEY, RULE_KEY
+from constants import ANALYZE_COMMAND, KOMI_KEY, RULE_KEY
 
 class KataGoGTP:
   def __init__(self, exe_path, model_path, config_path):
@@ -23,6 +24,11 @@ class KataGoGTP:
     self.last_analysis = ""      # 최신 분석 텍스트 저장
     self.is_running = True
     self.analysis_callback = None # UI 업데이트용 콜백 (선택 사항)
+    self.sent_cmd_id = 0
+    self.acked_cmd_id = 0
+    self.cmd_queue = queue.Queue()
+    self.is_waiting = False
+
 
     # 2. 엔진 로딩 확인
     time.sleep(1) 
@@ -65,20 +71,29 @@ class KataGoGTP:
   
       # 일반 응답(=) 처리 (필요 시 로그 출력)
       elif line.startswith("="):
-        # print(f"[Engine Output]: {line}")
-        pass
+        cmd_id = int(line[1:])
+        self.acked_cmd_id = cmd_id + 1
+        self.is_waiting = False
+        self._process_request()
 
 
   def send_command(self, command):
-    """[비동기] 명령어를 보내기만 하고 즉시 복귀 (Non-blocking)"""
-    if not self.process or self.process.poll() is not None:
+    self.cmd_queue.put((self.sent_cmd_id, command))
+    self.sent_cmd_id += 1
+    self._process_request()
+
+
+  def _process_request(self):
+    if self.is_waiting or self.acked_cmd_id == self.sent_cmd_id:
       return
-    
-    try:
-      self.process.stdin.write(command + "\n")
-      self.process.stdin.flush()
-    except Exception as e:
-      print(f"명령어 전송 중 에러: {e}")
+    id, command = self.cmd_queue.get()
+    self.process.stdin.write(f"{id} {command}\n")
+    self.process.stdin.flush()
+    if command == ANALYZE_COMMAND:
+      self.acked_cmd_id = id + 1
+      return self._process_request()
+    else:
+      self.is_waiting = True
 
 
   def play_move(self, color, vertex):
@@ -94,7 +109,7 @@ class KataGoGTP:
   def start_analyze(self, callback=None):
     """분석 시작 (콜백 함수를 등록할 수 있음)"""
     self.analysis_callback = callback
-    self.send_command("kata-analyze 10")
+    self.send_command(ANALYZE_COMMAND)
 
 
   def stop_analyze(self):

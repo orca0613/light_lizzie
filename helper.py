@@ -44,6 +44,29 @@ def parse_full_katago_string(data):
   return parsed_results
 
 
+def get_best_from_katago_response(data):
+  # 1. 각 info 항목을 개별적으로 추출할 패턴
+  # info move부터 다음 info 전까지 혹은 문자열 끝까지를 하나의 그룹으로 잡습니다.
+  info_blocks = re.findall(r"(info move .*?)(?=info move|$)", data)
+
+  block = info_blocks[0]
+  move = re.search(r"move ([A-Z][0-9]+)", block)
+  winrate = re.search(r"winrate ([\d\.]+)", block)
+  scoreLead = re.search(r"scoreLead ([\-\d\.]+)", block)
+  scoreStdev = re.search(r"scoreStdev ([\-\d\.]+)", block)
+  visits = re.search(r"visits (\d+)", block)
+  pv = re.search(r"pv ([\w\s]+)", block) # 다음 수순들
+
+  return {
+    "move": move.group(1),
+    "winrate": float(winrate.group(1)) * 100, # 퍼센트로 변환
+    "scoreLead": float(scoreLead.group(1)) if scoreLead else 0.0,
+    "scoreStdev": float(scoreStdev.group(1)) if scoreStdev else 0.0,
+    "visits": int(visits.group(1)) if visits else 0,
+    "pv": pv.group(1).strip() if pv else ""
+  }
+
+
 def get_real_path(relative_path: str) -> str:
   """실제 .exe 파일 또는 스크립트가 있는 위치를 기준으로 절대 경로를 반환합니다."""
   if getattr(sys, 'frozen', False):

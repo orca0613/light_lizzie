@@ -4,9 +4,9 @@ from typing import Dict
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QTimer
 from api import get_player_data
-from constants import DISPLAY_SETTING_JSON_PATH, KATAGO_SETTING_JSON_PATH, KATAGO_VAR_PATH, KOMI_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY
+from constants import DISPLAY_SETTING_JSON_PATH, KATAGO_SETTING_JSON_PATH, KATAGO_VAR_PATH, KOMI_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, UPDATE_CYCLE_KEY
 from engine import KataGoGTP
-from helper import load_json, parse_full_katago_string, to_gtp_coord
+from helper import get_best_from_katago_response, load_json, parse_full_katago_string, to_gtp_coord
 from windows.analysis import AnalysisWindow
 from windows.main_board import MainBoard
 from windows.marker_board import MarkerBoard
@@ -52,10 +52,11 @@ class MainController:
       self._start_analyze()
 
     
-    # 분석 업데이트 타이머 (0.5초 간격)
+    # 분석 업데이트 타이머
+    update_cycle = self.katago_setting_json[UPDATE_CYCLE_KEY]
     self.analysis_timer = QTimer()
     self.analysis_timer.timeout.connect(self.process_latest_analysis)
-    self.analysis_timer.start(500) # 500ms
+    self.analysis_timer.start(update_cycle)
 
   
   def show_all(self):
@@ -116,25 +117,26 @@ class MainController:
     max_analysis_time = self.katago_setting_json[MAX_ANALYSIS_TIME_KEY]
     max_visit = self.katago_setting_json[MAX_VISIT_KEY]
     line = self.engine.last_analysis
-    analysis_array = parse_full_katago_string(line)
-    if (analysis_array):
-      best_data = analysis_array[0]
-      winrate = round(best_data["winrate"] * 10) / 10
-      score = round(best_data["scoreLead"] * 10) / 10
-      complexity = round(best_data["scoreStdev"] * 10) / 10
-      visits = best_data["visits"]
-      cur_time = time.time()
-      if (cur_time - self.analysis_time > max_analysis_time) or visits > max_visit:
-        self._stop_analyze()
-        return
-      if is_white_turn:
-        winrate = 100 - winrate
-        score = -score
-      self.winrate_bar.update_data(winrate, score)
-      if is_white_turn:
-        self.white_analysis_window.update_analysis_data(self.main_board.move_number, winrate, score, complexity)
-      else:
-        self.black_analysis_window.update_analysis_data(self.main_board.move_number, winrate, score, complexity)
+    # analysis_array = parse_full_katago_string(line)
+    best_data = get_best_from_katago_response(line)
+    # if (analysis_array):
+    #   best_data = analysis_array[0]
+    winrate = round(best_data["winrate"] * 10) / 10
+    score = round(best_data["scoreLead"] * 10) / 10
+    complexity = round(best_data["scoreStdev"] * 10) / 10
+    visits = best_data["visits"]
+    cur_time = time.time()
+    if (cur_time - self.analysis_time > max_analysis_time) or visits > max_visit:
+      self._stop_analyze()
+      return
+    if is_white_turn:
+      winrate = 100 - winrate
+      score = -score
+    self.winrate_bar.update_data(winrate, score)
+    if is_white_turn:
+      self.white_analysis_window.update_analysis_data(self.main_board.move_number, winrate, score, complexity)
+    else:
+      self.black_analysis_window.update_analysis_data(self.main_board.move_number, winrate, score, complexity)
 
 
   def _undo(self):
@@ -169,6 +171,8 @@ class MainController:
     self.katago_setting_json = katago_setting_json
     rule = katago_setting_json[RULE_KEY]
     komi = katago_setting_json[KOMI_KEY]
+    update_cycle = katago_setting_json[UPDATE_CYCLE_KEY]
+    self.analysis_timer.start(update_cycle)
     self.engine.set_rule_and_komi(rule, komi)
     self._start_analyze()
 
