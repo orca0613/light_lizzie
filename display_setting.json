@@ -1,0 +1,6 @@
+{
+    "board_size": 600,
+    "winrate_bar_width": 400,
+    "winrate_ber_height": 50,
+    "is_white_first": true
+}

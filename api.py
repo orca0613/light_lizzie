@@ -1,0 +1,38 @@
+import requests
+
+localhost = "http://localhost:8080"
+api_url = "https://national-team-project-backend-593632018880.asia-northeast3.run.app"
+
+# 백엔드에서 허용하는 Origin
+allowed_origin = "https://opening-note.web.app"
+
+# 요청 헤더에 Origin을 추가
+headers = {
+  "Origin": allowed_origin
+}
+
+def request_statistics_data(query: str):
+  url = f"{localhost}/katago-analysis/get-avr-data/{query}"
+  response = requests.get(url=url, headers=headers)
+  status_code = response.status_code
+  if status_code == 200:
+    return response.json()
+  return False
+
+
+def get_player_data(name: str):
+  url = f"{localhost}/player/get-by-name/{name}"
+  response = requests.get(url=url, headers=headers)
+  status_code = response.status_code
+  if status_code == 200:
+    return response.json()
+  return False
+
+
+def get_analysis_data(player_code: int):
+  url = f"{localhost}/katago-analysis/get-analysis-data/{player_code}"
+  response = requests.get(url=url, headers=headers)
+  status_code = response.status_code
+  if status_code == 200:
+    return response.json()
+  return False
