@@ -1,0 +1,6 @@
+pandas==3.0.3
+pyside6==6.11.1
+pyside6_addons==6.11.1
+pyside6_essentials==6.11.1
+python_dateutil==2.9.0.post0
+Requests==2.34.2
