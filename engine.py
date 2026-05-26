@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import queue
 import subprocess
@@ -13,32 +12,28 @@ from typing import Dict
 from constants import ANALYZE_COMMAND, KOMI_KEY, RULE_KEY
 
 
-def _setup_debug_logger():
-  log_path = Path.home() / "light_lizzie_engine_debug.log"
-  logger = logging.getLogger("katago_engine_debug")
-  logger.setLevel(logging.DEBUG)
-  if not logger.handlers:
-    handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
-    handler.setFormatter(logging.Formatter(
-      "%(asctime)s.%(msecs)03d [%(threadName)s] %(message)s",
-      datefmt="%H:%M:%S",
-    ))
-    logger.addHandler(handler)
-  logger.info("=" * 60)
-  logger.info("KataGoGTP debug log start (pid=%d, platform=%s, py=%s)",
-              os.getpid(), sys.platform, sys.version.split()[0])
-  logger.info("log file: %s", log_path)
-  return logger
+_LOG_PATH = Path.home() / "light_lizzie_engine_debug.log"
+_log_file = open(_LOG_PATH, "a", encoding="utf-8", buffering=1)  # line-buffered
+_log_lock = threading.Lock()
 
 
-_log = _setup_debug_logger()
+def _log(msg):
+  ts = time.strftime("%H:%M:%S") + f".{int((time.time() % 1) * 1000):03d}"
+  tname = threading.current_thread().name
+  with _log_lock:
+    print(f"{ts} [{tname}] {msg}", file=_log_file, flush=True)
+
+
+_log("=" * 60)
+_log(f"KataGoGTP debug log start pid={os.getpid()} platform={sys.platform} py={sys.version.split()[0]}")
+_log(f"log file: {_LOG_PATH}")
 
 
 class KataGoGTP:
   def __init__(self, exe_path, model_path, config_path):
     # 1. 프로세스 실행
     cmd = [exe_path, "gtp", "-model", model_path, "-config", config_path]
-    _log.info("launching: %s", cmd)
+    _log(f"launching: {cmd}")
     self.process = subprocess.Popen(
       cmd,
       stdin=subprocess.PIPE,
@@ -49,7 +44,7 @@ class KataGoGTP:
       errors='replace',
       bufsize=1
     )
-    _log.info("subprocess pid=%s", self.process.pid)
+    _log(f"subprocess pid={self.process.pid}")
 
     self.last_analysis = ""      # 최신 분석 텍스트 저장
     self.is_running = True
@@ -67,7 +62,7 @@ class KataGoGTP:
     time.sleep(1)
     if self.process.poll() is not None:
       error_msg = self.process.stderr.read()
-      _log.error("engine exited early: %s", error_msg)
+      _log(f"engine exited early: {error_msg}")
       print(f"엔진 조기 종료 에러:\n{error_msg}")
       return
 
@@ -95,11 +90,11 @@ class KataGoGTP:
       while self.is_running and self.process.poll() is None:
         line = self.process.stderr.readline()
         if not line:
-          _log.warning("stderr EOF (engine likely exited, returncode=%s)", self.process.poll())
+          _log(f"stderr EOF (engine returncode={self.process.poll()})")
           break
-        _log.debug("STDERR: %s", line.rstrip())
+        _log(f"STDERR: {line.rstrip()}")
     except Exception:
-      _log.error("_drain_stderr crashed:\n%s", traceback.format_exc())
+      _log(f"_drain_stderr crashed:\n{traceback.format_exc()}")
 
 
   def _watchdog(self):
@@ -113,11 +108,10 @@ class KataGoGTP:
         continue
       stuck_for = time.time() - started
       if stuck_for > WARN_AFTER and (time.time() - last_warn_at) > 5.0:
-        _log.warning(
-          "WATCHDOG stuck %.1fs: sent=%d acked=%d queue=%d listener_alive=%s stderr_alive=%s engine_alive=%s",
-          stuck_for, self.sent_cmd_id, self.acked_cmd_id, self.cmd_queue.qsize(),
-          self.listener_thread.is_alive(), self.stderr_thread.is_alive(),
-          self.process.poll() is None,
+        _log(
+          f"WATCHDOG stuck {stuck_for:.1f}s: sent={self.sent_cmd_id} acked={self.acked_cmd_id} "
+          f"queue={self.cmd_queue.qsize()} listener_alive={self.listener_thread.is_alive()} "
+          f"stderr_alive={self.stderr_thread.is_alive()} engine_alive={self.process.poll() is None}"
         )
         last_warn_at = time.time()
 
@@ -128,7 +122,7 @@ class KataGoGTP:
       while self.is_running and self.process.poll() is None:
         line = self.process.stdout.readline()
         if not line:
-          _log.warning("stdout EOF (engine likely exited, returncode=%s)", self.process.poll())
+          _log(f"stdout EOF (engine returncode={self.process.poll()})")
           break
 
         line = line.strip()
@@ -141,44 +135,42 @@ class KataGoGTP:
           self._info_count += 1
           now = time.time()
           if now - self._last_info_log > 5.0:
-            _log.debug("STDOUT info heartbeat: %d info lines received total", self._info_count)
+            _log(f"STDOUT info heartbeat: {self._info_count} info lines total")
             self._last_info_log = now
           if self.analysis_callback:
             # 주의: 이 콜백은 리스너 스레드에서 실행됨
             try:
               self.analysis_callback(line)
             except Exception:
-              _log.error("analysis_callback raised:\n%s", traceback.format_exc())
+              _log(f"analysis_callback raised:\n{traceback.format_exc()}")
 
         # 일반 응답(=) 처리 (필요 시 로그 출력)
         elif line.startswith("="):
-          _log.info("STDOUT response: %r", line[:200])
+          _log(f"STDOUT response: {line[:200]!r}")
           rest = line[1:].strip()
           if not rest:
-            _log.error("response had no id payload: %r — listener would have died here pre-fix", line)
+            _log(f"response had no id payload: {line!r} — pre-fix this killed listener")
             continue
           first_tok = rest.split()[0]
           try:
             cmd_id = int(first_tok)
           except ValueError:
-            _log.error("could not parse cmd id from %r (first token %r) — pre-fix this killed listener", line, first_tok)
+            _log(f"could not parse cmd id from {line!r} (first token {first_tok!r}) — pre-fix this killed listener")
             continue
-          _log.info("ACK id=%d  (sent_cmd_id=%d acked_cmd_id_before=%d queue=%d)",
-                    cmd_id, self.sent_cmd_id, self.acked_cmd_id, self.cmd_queue.qsize())
+          _log(f"ACK id={cmd_id} (sent={self.sent_cmd_id} acked_before={self.acked_cmd_id} queue={self.cmd_queue.qsize()})")
           self.acked_cmd_id = cmd_id + 1
           self.is_waiting = False
           self._wait_started_at = None
           self._process_request()
         else:
-          _log.debug("STDOUT other: %s", line[:200])
+          _log(f"STDOUT other: {line[:200]}")
     except Exception:
-      _log.error("_listen crashed (this would silently freeze the app):\n%s", traceback.format_exc())
+      _log(f"_listen crashed (would silently freeze the app):\n{traceback.format_exc()}")
 
 
   def send_command(self, command):
-    _log.info("send_command(%r) from thread=%s  sent=%d acked=%d waiting=%s queue=%d",
-              command, threading.current_thread().name,
-              self.sent_cmd_id, self.acked_cmd_id, self.is_waiting, self.cmd_queue.qsize())
+    _log(f"send_command({command!r}) sent={self.sent_cmd_id} acked={self.acked_cmd_id} "
+         f"waiting={self.is_waiting} queue={self.cmd_queue.qsize()}")
     self.cmd_queue.put((self.sent_cmd_id, command))
     self.sent_cmd_id += 1
     self._process_request()
@@ -187,21 +179,21 @@ class KataGoGTP:
   def _process_request(self):
     caller = threading.current_thread().name
     if self.is_waiting or self.acked_cmd_id == self.sent_cmd_id:
-      _log.debug("_process_request skip caller=%s waiting=%s sent=%d acked=%d",
-                 caller, self.is_waiting, self.sent_cmd_id, self.acked_cmd_id)
+      _log(f"_process_request skip caller={caller} waiting={self.is_waiting} "
+           f"sent={self.sent_cmd_id} acked={self.acked_cmd_id}")
       return
     try:
       id, command = self.cmd_queue.get_nowait()
     except queue.Empty:
-      _log.warning("_process_request: queue empty though sent != acked (caller=%s sent=%d acked=%d)",
-                   caller, self.sent_cmd_id, self.acked_cmd_id)
+      _log(f"_process_request: queue empty though sent != acked caller={caller} "
+           f"sent={self.sent_cmd_id} acked={self.acked_cmd_id}")
       return
-    _log.info("STDIN  -> id=%d %s   (caller=%s)", id, command, caller)
+    _log(f"STDIN  -> id={id} {command}  (caller={caller})")
     try:
       self.process.stdin.write(f"{id} {command}\n")
       self.process.stdin.flush()
     except Exception:
-      _log.error("stdin write failed for %r:\n%s", command, traceback.format_exc())
+      _log(f"stdin write failed for {command!r}:\n{traceback.format_exc()}")
       return
     if command == ANALYZE_COMMAND:
       self.acked_cmd_id = id + 1
@@ -236,7 +228,7 @@ class KataGoGTP:
 
   def close(self):
     """엔진 종료"""
-    _log.info("close() called")
+    _log("close() called")
     self.is_running = False
     if self.process:
       self.process.terminate()
