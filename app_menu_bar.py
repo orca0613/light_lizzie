@@ -15,9 +15,9 @@ class AppMenuBar(QMenuBar):
     """카타고 경로 관련 메뉴 모듈화"""
     katago_path_menu = self.addMenu("카타고 경로 설정")
     
-    katago_path_action = QAction("카타고 실행 파일 선택 (*.exe)", self)
-    model_path_action = QAction("가중치 모델 선택 (*.bin.gz)", self)
-    config_path_action = QAction("컨피그 파일 선택 (*.cfg)", self)
+    katago_path_action = QAction("카타고 실행 파일 선택", self)
+    model_path_action = QAction("가중치 모델 선택", self)
+    config_path_action = QAction("컨피그 파일 선택", self)
 
     exit_action = QAction("종료", self)
     exit_action.triggered.connect(self.parent().close) # 메인 윈도우 종료
@@ -37,11 +37,14 @@ class AppMenuBar(QMenuBar):
     katago_setting_action = QAction("카타고 옵션 설정", self)
     display_setting_action = QAction("디스플레이 옵션 설정", self)
     player_setting_action = QAction("플레이어 설정", self)
+    window_setting_action = QAction("윈도우 설정", self)
     
     katago_setting_action.triggered.connect(self.controller.open_katago_setting_dialog)
     display_setting_action.triggered.connect(self.controller.open_display_setting_dialog)
     player_setting_action.triggered.connect(self.controller.open_player_setting_dialog)
+    window_setting_action.triggered.connect(self.controller.open_window_setting_dialog)
     
     setting_menu.addAction(katago_setting_action)
     setting_menu.addAction(display_setting_action)
     setting_menu.addAction(player_setting_action)
+    setting_menu.addAction(window_setting_action)

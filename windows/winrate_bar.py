@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QPainter, QColor, QPen, QLinearGradient, QFont
 from PySide6.QtCore import Qt, QRectF
 
-from constants import DISPLAY_SETTING_JSON_PATH, IS_WHITE_FIRST_KEY, KATAGO_SETTING_JSON_PATH, WIN_RATE_BAR_HEIGHT_KEY, WIN_RATE_BAR_WIDTH_KEY
+from constants import DISPLAY_SETTING_JSON_PATH, IS_WHITE_FIRST_KEY, KATAGO_SETTING_JSON_PATH, WINRATE_BAR_HEIGHT_KEY, WINRATE_BAR_WIDTH_KEY
 from helper import load_json
 
 black_primary_color = "#000000"
@@ -10,10 +10,10 @@ black_sub_color = "#2c2c2c"
 white_primary_color = "#ffffff"
 white_sub_color = "#e0e0e0"
 
-class WinRateBar(QMainWindow):
+class WinrateBar(QMainWindow):
   def __init__(self):
     super().__init__()
-    self.setWindowTitle("Win Rate Bar")
+    self.setWindowTitle("Winrate Bar")
     # 1. 테두리 없는 창 생성 및 작업 표시줄에서 숨김 (선택)
     # self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool)
     self.bar_width = 0
@@ -23,10 +23,12 @@ class WinRateBar(QMainWindow):
     self.black_score = 0
     self.update_bar_display()
       
+
   def update_data(self, winrate, score):
     self.black_winrate = winrate
     self.black_score = score
     self.update()
+
 
   def paintEvent(self, event):
     painter = QPainter(self)
@@ -120,6 +122,6 @@ class WinRateBar(QMainWindow):
   def update_bar_display(self):
     setting_json = load_json(DISPLAY_SETTING_JSON_PATH)
     self.is_white_first = setting_json[IS_WHITE_FIRST_KEY]
-    self.bar_width = setting_json[WIN_RATE_BAR_WIDTH_KEY]
-    self.bar_height = setting_json[WIN_RATE_BAR_HEIGHT_KEY]
+    self.bar_width = setting_json[WINRATE_BAR_WIDTH_KEY]
+    self.bar_height = setting_json[WINRATE_BAR_HEIGHT_KEY]
     self.resize(self.bar_width, self.bar_height)

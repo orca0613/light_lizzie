@@ -3,10 +3,14 @@ from PySide6.QtGui import QCloseEvent, QKeySequence, QPainter, QColor, QPen, QSh
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 
 from app_menu_bar import AppMenuBar
-from constants import BOARD_SIZE_KEY, DISPLAY_SETTING_JSON_PATH
+from constants import BOARD_SIZE_KEY, DISPLAY_SETTING_JSON_PATH, ZOBRIST_JSON_PATH
 from helper import load_json
 from logic import play_move
 from menu_controller import MenuController
+
+zobrist_json = load_json(ZOBRIST_JSON_PATH)
+black_zobrist_data = zobrist_json["black"]
+white_zobrist_data = zobrist_json["white"]
 
 class MainBoard(QMainWindow):
   def __init__(self):
@@ -18,6 +22,7 @@ class MainBoard(QMainWindow):
     self.grid_size = 19
     self.move_number = 0
     self.history = [{}]
+    self.position = 0
     self.undo_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Backspace), self)
     self.undo_shortcut.activated.connect(self.undo)
 
@@ -32,6 +37,7 @@ class MainBoard(QMainWindow):
   update_katago_setting_signal = Signal()
   update_display_setting_signal = Signal()
   update_player_name_signal = Signal(str, str)
+  update_window_setting_signal = Signal()
   closed_signal = Signal()
 
 
@@ -111,9 +117,24 @@ class MainBoard(QMainWindow):
     if not self.move_number:
       return
     self.move_number -= 1
-    self.history.pop()
+    last_status = self.history.pop()
+    new_status = self.history[-1]
+    last_move = -1
+
+    for key in last_status.keys():
+      if key not in new_status:
+        last_move = key
+        last_color = last_status[key]
+    if last_color == "B" or last_color == "W":
+      data = black_zobrist_data if last_color == "B" else white_zobrist_data
+      self.position ^= data[last_move]
     self.repaint()
     self.undo_signal.emit()
+
+
+  def _update_position(self, loc: int):
+    data = black_zobrist_data if self.move_number % 2 else white_zobrist_data
+    self.position ^= data[loc]
 
 
   def mousePressEvent(self, event):
@@ -133,6 +154,7 @@ class MainBoard(QMainWindow):
     self.history.append(new_stones)
     self.move_number += 1
     self.repaint()
+    self._update_position(l)
         
     # 2. 메인 윈도우에 클릭 신호 발생 (엔진 전달용)
     self.clicked_pos.emit(x, y)
@@ -165,3 +187,7 @@ class MainBoard(QMainWindow):
 
   def update_player_name(self, black: str, white: str):
     self.update_player_name_signal.emit(black, white)
+
+
+  def update_window_setting(self):
+    self.update_window_setting_signal.emit()

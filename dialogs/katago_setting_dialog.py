@@ -1,8 +1,10 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QRadioButton, QButtonGroup)
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton)
+from PySide6.QtCore import Signal
 
 from constants import IS_WHITE_FIRST_KEY, KOMI_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, RULES, KATAGO_SETTING_JSON_PATH, UPDATE_CYCLE_KEY
 from helper import load_json, update_json
+from small_widgets.labeled_input_widget import LabeledInputWidget
+from small_widgets.radio_group_widget import RadioGroupWidget
 
 class KatagoSettingDialog(QDialog):
   def __init__(self, parent=None):
@@ -16,59 +18,29 @@ class KatagoSettingDialog(QDialog):
     layout = QVBoxLayout(self)
     
     # 라디오 버튼 (규칙 설정) ---
-    rule_layout = QHBoxLayout()
-    rule_layout.setAlignment(Qt.AlignmentFlag.AlignJustify)
-    rule_layout.addStretch(1)
-    rule_layout.addWidget(QLabel("Rule"))
-    rule_layout.addStretch(2)
-    
-    self.rule_radio_group = QButtonGroup(self)
-    default_rule = self.setting_json[RULE_KEY]
-    for i, text in enumerate(RULES):
-      radio = QRadioButton(text)
-      radio.setChecked(default_rule == text)
-      self.rule_radio_group.addButton(radio, i)
-      rule_layout.addWidget(radio)
-      rule_layout.addStretch(2)
-    rule_layout.addStretch(1)
-    self.rule_radio_group.idClicked.connect(self._update_rule)
-    layout.addLayout(rule_layout)
+    rule_idx = 1 if self.setting_json[RULE_KEY] == "chinese" else 0
+    rule_group = RadioGroupWidget(200, "규칙", RULES, rule_idx, self._update_rule, self)
+    layout.addWidget(rule_group)
 
     # 덤(komi) 레이아웃
 
-    komi_layout = QHBoxLayout()
-    komi_layout.addWidget(QLabel("덤"))
-    self.komi_input = QLineEdit()
-    self.komi_input.setText(str(self.setting_json[KOMI_KEY]))
-    komi_layout.addWidget(self.komi_input)
-    layout.addLayout(komi_layout)
+    self.komi_input = LabeledInputWidget("덤", str(self.setting_json[KOMI_KEY]), True, self)
+    layout.addWidget(self.komi_input)
 
     # 비짓 카운트 레이아웃
 
-    visit_count_layout = QHBoxLayout()
-    visit_count_layout.addWidget(QLabel("비짓 카운트"))
-    self.vc_input = QLineEdit()
-    self.vc_input.setText(str(self.setting_json[MAX_VISIT_KEY]))
-    visit_count_layout.addWidget(self.vc_input)
-    layout.addLayout(visit_count_layout)
+    self.vc_input = LabeledInputWidget("비짓 카운트", str(self.setting_json[MAX_VISIT_KEY]), True, self)
+    layout.addWidget(self.vc_input)
 
     # 분석 시간 레이아웃
 
-    analysis_sec_layout = QHBoxLayout()
-    analysis_sec_layout.addWidget(QLabel("분석 시간 (sec)"))
-    self.as_input = QLineEdit()
-    self.as_input.setText(str(self.setting_json[MAX_ANALYSIS_TIME_KEY]))
-    analysis_sec_layout.addWidget(self.as_input)
-    layout.addLayout(analysis_sec_layout)
+    self.as_input = LabeledInputWidget("분석 시간", str(self.setting_json[MAX_ANALYSIS_TIME_KEY]), True, self)
+    layout.addWidget(self.as_input)
 
     # 갱신 주기 레이아웃
 
-    update_cycle_layout = QHBoxLayout()
-    update_cycle_layout.addWidget(QLabel("갱신 주기 (ms)"))
-    self.uc_input = QLineEdit()
-    self.uc_input.setText(str(self.setting_json[UPDATE_CYCLE_KEY]))
-    update_cycle_layout.addWidget(self.uc_input)
-    layout.addLayout(update_cycle_layout)
+    self.uc_input = LabeledInputWidget("갱신 주기", str(self.setting_json[UPDATE_CYCLE_KEY]), True, self)
+    layout.addWidget(self.uc_input)
     
     # 확인 버튼 (Action Buttons) ---
     btn_layout = QHBoxLayout()
@@ -87,13 +59,7 @@ class KatagoSettingDialog(QDialog):
     self.setting_json[RULE_KEY] = RULES[idx]
     komi = 7.5 if idx else 6.5
     self.setting_json[KOMI_KEY] = komi
-    self.komi_input.setText(str(komi))
-    return
-  
-
-  def update_bar_option(self, idx: int):
-    self.changed = True
-    self.setting_json[IS_WHITE_FIRST_KEY] = bool(idx)
+    self.komi_input.set_text(str(komi))
     return
   
 

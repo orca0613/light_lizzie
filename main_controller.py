@@ -4,13 +4,14 @@ from typing import Dict
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QTimer
 from api import get_player_data
-from constants import DISPLAY_SETTING_JSON_PATH, KATAGO_SETTING_JSON_PATH, KATAGO_VAR_PATH, KOMI_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, UPDATE_CYCLE_KEY
+from constants import BLACK_ANALYSIS_WINDOW_KEY, DISPLAY_SETTING_JSON_PATH, KATAGO_SETTING_JSON_PATH, KATAGO_VAR_PATH, KOMI_KEY, MARKER_BOARD_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, UPDATE_CYCLE_KEY, WHITE_ANALYSIS_WINDOW_KEY, WINDOW_OPTIONS_JSON_PATH, WINRATE_BAR_KEY, WINRATE_CHART_KEY
 from engine import KataGoGTP
-from helper import get_best_from_katago_response, load_json, parse_full_katago_string, to_gtp_coord
+from helper import get_best_from_katago_response, load_json, to_gtp_coord, update_json
 from windows.analysis import AnalysisWindow
 from windows.main_board import MainBoard
 from windows.marker_board import MarkerBoard
-from windows.winrate_bar import WinRateBar
+from windows.winrate_bar import WinrateBar
+from windows.winrate_chart import WinrateChartWindow
 
 class MainController:
   def __init__(self):
@@ -20,10 +21,18 @@ class MainController:
     # 윈도우 창 설정
     
     self.main_board = MainBoard()
-    self.winrate_bar = WinRateBar()
+    self.winrate_bar = WinrateBar()
+    self.winrate_chart = WinrateChartWindow()
     self.marker_board = MarkerBoard()
     self.black_analysis_window = AnalysisWindow("black")
     self.white_analysis_window = AnalysisWindow("white")
+    self.sub_windows = [
+      self.winrate_bar, 
+      self.winrate_chart,
+      self.marker_board, 
+      self.black_analysis_window, 
+      self.white_analysis_window
+    ]
 
     # 각 윈도우의 시그널 연결
 
@@ -33,6 +42,7 @@ class MainController:
     self.main_board.update_katago_setting_signal.connect(self._update_katago_setting)
     self.main_board.update_display_setting_signal.connect(self._update_display_setting)
     self.main_board.update_player_name_signal.connect(self._update_player)
+    self.main_board.update_window_setting_signal.connect(self._update_window_setting)
     self.main_board.closed_signal.connect(self._close_windows)
 
     # 엔진 및 카타고 분석 변수 설정
@@ -57,15 +67,6 @@ class MainController:
     self.analysis_timer = QTimer()
     self.analysis_timer.timeout.connect(self.process_latest_analysis)
     self.analysis_timer.start(update_cycle)
-
-  
-  def show_all(self):
-    """ 모든 창을 화면에 띄우기 """
-    self.winrate_bar.show()
-    self.marker_board.show()
-    self.main_board.show()
-    self.black_analysis_window.show()
-    self.white_analysis_window.show()
 
   
   def _set_engine(self):
@@ -103,6 +104,7 @@ class MainController:
     
     # 1. 엔진에 한 수 전달 (비동기)
     self.engine.play_move(color_str, vertex)
+    self.winrate_chart.play_move()
     
     # 2. 엔진에 분석 시작 요청
     self._start_analyze()
@@ -133,6 +135,7 @@ class MainController:
       winrate = 100 - winrate
       score = -score
     self.winrate_bar.update_data(winrate, score)
+    self.winrate_chart.update_winrate(winrate)
     if is_white_turn:
       self.white_analysis_window.update_analysis_data(self.main_board.move_number, winrate, score, complexity)
     else:
@@ -146,6 +149,7 @@ class MainController:
     else:
       y, x = self.moves[-1]
       self.marker_board.set_last_move(y, x)
+    self.winrate_chart.undo()
     self.engine.undo()
     self._start_analyze()
 
@@ -210,6 +214,16 @@ class MainController:
       QMessageBox.warning(self.main_board, "경고", "백 플레이어를 찾을 수 없습니다.")
       self.white_analysis_window.update_player("", 0)
 
+
+  def _update_window_setting(self):
+    sub_window_keys = [WINRATE_BAR_KEY, WINRATE_CHART_KEY, MARKER_BOARD_KEY, BLACK_ANALYSIS_WINDOW_KEY, WHITE_ANALYSIS_WINDOW_KEY]
+    window_options_json = load_json(WINDOW_OPTIONS_JSON_PATH)
+    for i, key in enumerate(sub_window_keys):
+      if window_options_json[key]:
+        self.sub_windows[i].show()
+      else:
+        self.sub_windows[i].close()
+
   
   def _update_analysis_data(self, analysis_data: Dict, is_white_turn: bool):
     count = analysis_data["totalCount"]
@@ -223,13 +237,12 @@ class MainController:
 
 
   def _close_windows(self):
-    self.main_board.close()
-    self.marker_board.close()
-    self.winrate_bar.close()
-    self.black_analysis_window.close()
-    self.white_analysis_window.close()
-
-
+    window_options_json = load_json(WINDOW_OPTIONS_JSON_PATH)
+    for key in window_options_json.keys():
+      window_options_json[key] = False
+    update_json(WINDOW_OPTIONS_JSON_PATH, window_options_json)
+    for window in self.sub_windows:
+      window.close()
 
 
 if __name__ == "__main__":
@@ -237,6 +250,6 @@ if __name__ == "__main__":
     
     # 컨트롤러 생성 및 실행
     controller = MainController()
-    controller.show_all()
+    controller.main_board.show()
     
     sys.exit(app.exec())

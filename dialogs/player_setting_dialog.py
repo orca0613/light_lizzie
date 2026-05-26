@@ -1,7 +1,8 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout,
-                             QLabel, QLineEdit, QPushButton)
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton)
 
 from PySide6.QtCore import Signal
+
+from small_widgets.labeled_input_widget import LabeledInputWidget
 
 class PlayerSettingDialog(QDialog):
   def __init__(self, parent=None):
@@ -12,17 +13,10 @@ class PlayerSettingDialog(QDialog):
     # 메인 레이아웃 (Vertical)
     layout = QVBoxLayout(self)
 
-    black_layout = QHBoxLayout()
-    black_layout.addWidget(QLabel("흑"))
-    self.black_input = QLineEdit()
-    black_layout.addWidget(self.black_input)
-    layout.addLayout(black_layout)
-
-    white_layout = QHBoxLayout()
-    white_layout.addWidget(QLabel("백"))
-    self.white_input = QLineEdit()
-    white_layout.addWidget(self.white_input)
-    layout.addLayout(white_layout)
+    self.black_input = LabeledInputWidget("흑", "", False, self)
+    self.white_input = LabeledInputWidget("백", "", False, self)
+    layout.addWidget(self.black_input)
+    layout.addWidget(self.white_input)
 
     # 확인 버튼 (Action Buttons) ---
     btn_layout = QHBoxLayout()

@@ -2,5 +2,7 @@
     "board_size": 600,
     "winrate_bar_width": 400,
     "winrate_ber_height": 50,
+    "winrate_chart_width": 400,
+    "winrate_chart_height": 300,
     "is_white_first": true
 }
