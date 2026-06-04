@@ -1,24 +1,25 @@
 import copy
 from typing import Dict, List
 
-def get_neighbors(l: int) -> List[int]:
-  y, x = l // 19, l % 19
+
+def get_neighbors(loc: int) -> List[int]:
+  y, x = loc // 19, loc % 19
   neighbors = []
   if y > 0:
-    neighbors.append(l - 19)
+    neighbors.append(loc)
   if y < 18:
-    neighbors.append(l + 19)
+    neighbors.append(loc)
   if x > 0:
-    neighbors.append(l - 1)
+    neighbors.append(loc - 1)
   if x < 18:
-    neighbors.append(l + 1)
+    neighbors.append(loc + 1)
   return neighbors
 
 
-def get_dead_group(stones: Dict, l: int, oppo_color: str) -> List[int]:
+def get_dead_group(stones: Dict, loc: int, oppo_color: str) -> List[int]:
   group = []
   visited = set()
-  stack = [l]
+  stack = [loc]
 
   while stack:
     loc = stack.pop()
@@ -29,7 +30,7 @@ def get_dead_group(stones: Dict, l: int, oppo_color: str) -> List[int]:
     visited.add(loc)
     group.append(loc)
     stack += get_neighbors(loc)
-    
+
   return group
 
 
@@ -39,34 +40,33 @@ def clear_ko_spot(stones: Dict):
     if new_stones[loc] == "K":
       new_stones.pop(loc)
       break
-  
+
   return new_stones
 
 
-
 def remove_dead_group(stones: Dict, dead_group: List[int]):
-  for l in dead_group:
-    if l in stones:
-      stones.pop(l)
+  for loc in dead_group:
+    if loc in stones:
+      stones.pop(loc)
   return stones
 
 
-def play_move(stones: Dict, l: int, color: str):
-  if l < 0 or l > 360:
+def play_move(stones: Dict, loc: int, color: str):
+  if loc < 0 or loc > 360:
     return stones
-  if l in stones:
+  if loc in stones:
     return stones
-  
+
   new_stones = clear_ko_spot(stones)
-  new_stones[l] = color
+  new_stones[loc] = color
   oppo_color = "W" if color == "B" else "B"
   killed: List[int] = []
-  neighbors = get_neighbors(l)
+  neighbors = get_neighbors(loc)
   for neighbor in neighbors:
     if neighbor not in new_stones or new_stones[neighbor] == color:
       continue
     killed += get_dead_group(new_stones, neighbor, color)
-  suicide_group = get_dead_group(new_stones, l, oppo_color)
+  suicide_group = get_dead_group(new_stones, loc, oppo_color)
   new_stones = remove_dead_group(new_stones, killed)
   if not len(suicide_group):
     return new_stones
@@ -76,6 +76,3 @@ def play_move(stones: Dict, l: int, color: str):
     ko_spot = killed[0]
     new_stones[ko_spot] = "K"
   return new_stones
-    
-
-

@@ -1,15 +1,15 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton)
-
 from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QPushButton, QVBoxLayout
 
 from small_widgets.labeled_input_widget import LabeledInputWidget
+
 
 class PlayerSettingDialog(QDialog):
   def __init__(self, parent=None):
     super().__init__(parent)
     self.setWindowTitle("Player Selection")
     self.setMinimumSize(200, 200)
-    
+
     # 메인 레이아웃 (Vertical)
     layout = QVBoxLayout(self)
 
@@ -25,10 +25,10 @@ class PlayerSettingDialog(QDialog):
     layout.addLayout(btn_layout)
 
     # 시그널 연결 (Event Handling)
-    self.cnf_btn.clicked.connect(self.confirm) # 창 닫으면서 'OK' 반환
-  
+    self.cnf_btn.clicked.connect(self.confirm)  # 창 닫으면서 'OK' 반환
+
   change_player_signal = Signal(str, str)
-  
+
   def confirm(self):
     if self.focusWidget():
       self.focusWidget().clearFocus()

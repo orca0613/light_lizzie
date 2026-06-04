@@ -1,7 +1,8 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QProgressBar
 from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QProgressBar, QVBoxLayout, QWidget
 
 from helper import get_color_by_score
+
 
 class AnalysisBarWidget(QWidget):
   def __init__(self, title: str):
@@ -18,10 +19,10 @@ class AnalysisBarWidget(QWidget):
 
     # 상단 타이틀 레이아웃 (텍스트 가로 정렬)
     title_layout = QHBoxLayout()
-    
+
     self.title_label = QLabel(self.title)
     self.title_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
-    
+
     self.val_label = QLabel("0%")
     self.val_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
 

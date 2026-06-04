@@ -7,9 +7,7 @@ api_url = "https://national-team-project-backend-593632018880.asia-northeast3.ru
 allowed_origin = "https://opening-note.web.app"
 
 # 요청 헤더에 Origin을 추가
-headers = {
-  "Origin": allowed_origin
-}
+headers = {"Origin": allowed_origin}
 
 
 def get_player_data(name: str):

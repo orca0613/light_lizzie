@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QRadioButton, QButtonGroup
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QButtonGroup, QHBoxLayout, QLabel, QRadioButton, QWidget
+
 
 class RadioGroupWidget(QWidget):
   def __init__(self, width: int, title: str, options: list, default_index: int, on_clicked_callback, parent=None):

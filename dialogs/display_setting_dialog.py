@@ -1,10 +1,18 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QRadioButton, QButtonGroup)
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QPushButton, QVBoxLayout
 
-from constants import BAR_OPTIONS, BOARD_SIZE_KEY, DISPLAY_SETTING_JSON_PATH, IS_WHITE_FIRST_KEY, KOMI_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, RULES, KATAGO_SETTING_JSON_PATH, WINRATE_BAR_HEIGHT_KEY, WINRATE_BAR_WIDTH_KEY
+from constants import (
+  BAR_OPTIONS,
+  BOARD_SIZE_KEY,
+  DISPLAY_SETTING_JSON_PATH,
+  IS_WHITE_FIRST_KEY,
+  WINRATE_BAR_HEIGHT_KEY,
+  WINRATE_BAR_WIDTH_KEY,
+)
 from helper import load_json, update_json
 from small_widgets.labeled_input_widget import LabeledInputWidget
 from small_widgets.radio_group_widget import RadioGroupWidget
+
 
 class DisplaySettingDialog(QDialog):
   def __init__(self, parent=None):
@@ -13,25 +21,38 @@ class DisplaySettingDialog(QDialog):
     self.setMinimumSize(200, 200)
     self.setting_json = load_json(DISPLAY_SETTING_JSON_PATH)
     self.changed = False
-    
+
     # 메인 레이아웃 (Vertical)
     layout = QVBoxLayout(self)
-    
+
     # 라디오 버튼 (그래프 옵션 설정) ---
     bar_option_idx = 1 if self.setting_json[IS_WHITE_FIRST_KEY] else 0
-    bar_option_group = RadioGroupWidget(200, "승률 바 표시 옵션", BAR_OPTIONS, bar_option_idx, self._update_bar_option, self)
+    bar_option_group = RadioGroupWidget(
+      200,
+      "승률 바 표시 옵션",
+      BAR_OPTIONS,
+      bar_option_idx,
+      self._update_bar_option,
+      self,
+    )
     layout.addWidget(bar_option_group)
 
     # 보드 사이즈 레이아웃
 
-    self.board_size_input = LabeledInputWidget("보드 사이즈", str(self.setting_json[BOARD_SIZE_KEY]), True, self)
-    self.bar_width_input = LabeledInputWidget("승률 그래프 넓이", str(self.setting_json[WINRATE_BAR_WIDTH_KEY]), True, self)
-    self.bar_height_input = LabeledInputWidget("승률 그래프 높이", str(self.setting_json[WINRATE_BAR_HEIGHT_KEY]), True, self)
+    self.board_size_input = LabeledInputWidget(
+      "보드 사이즈", str(self.setting_json[BOARD_SIZE_KEY]), True, self
+    )
+    self.bar_width_input = LabeledInputWidget(
+      "승률 그래프 넓이", str(self.setting_json[WINRATE_BAR_WIDTH_KEY]), True, self
+    )
+    self.bar_height_input = LabeledInputWidget(
+      "승률 그래프 높이", str(self.setting_json[WINRATE_BAR_HEIGHT_KEY]), True, self
+    )
 
     layout.addWidget(self.board_size_input)
     layout.addWidget(self.bar_width_input)
     layout.addWidget(self.bar_height_input)
-    
+
     # 확인 버튼 (Action Buttons) ---
     btn_layout = QHBoxLayout()
     self.cnf_btn = QPushButton("확인")
@@ -40,22 +61,19 @@ class DisplaySettingDialog(QDialog):
     layout.addLayout(btn_layout)
 
     # 시그널 연결 (Event Handling)
-    self.cnf_btn.clicked.connect(self.confirm) # 창 닫으면서 'OK' 반환
-  
+    self.cnf_btn.clicked.connect(self.confirm)  # 창 닫으면서 'OK' 반환
+
   update_display_setting_signal = Signal()
-  
 
   def _update_bar_option(self, idx: int):
     self.changed = True
     self.setting_json[IS_WHITE_FIRST_KEY] = bool(idx)
     return
-  
 
   def update_setting_json(self, key: str, val: int | str):
     self.changed = True
     self.setting_json[key] = val
     return
-  
 
   def confirm(self):
     try:
@@ -73,7 +91,7 @@ class DisplaySettingDialog(QDialog):
     except ValueError as e:
       # 사용자가 숫자가 아닌 문자(예: "abc")를 입력했을 때 에러 방지 예외처리
       print(e)
-      return # 저장하지 않고 함수 종료 (창 안 닫힘)
+      return  # 저장하지 않고 함수 종료 (창 안 닫힘)
     update_json(DISPLAY_SETTING_JSON_PATH, self.setting_json)
     if self.changed:
       self.update_display_setting_signal.emit()

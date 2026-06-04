@@ -1,7 +1,7 @@
 {
     "kata-set-rules": "japanese",
     "komi": 6.5,
-    "max_visit": 100000,
-    "max_analysis_time": 30,
+    "max_visit": 10000,
+    "max_analysis_time": 10,
     "update_cycle": 300
 }
