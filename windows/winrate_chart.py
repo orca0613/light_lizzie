@@ -1,11 +1,11 @@
 import sys
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QApplication
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QCloseEvent, QPainter
 from PySide6.QtCore import Qt
 
-from constants import DISPLAY_SETTING_JSON_PATH, WINRATE_CHART_HEIGHT_KEY, WINRATE_CHART_WIDTH_KEY
-from helper import load_json
+from constants import DISPLAY_SETTING_JSON_PATH, WINRATE_CHART_HEIGHT_KEY, WINRATE_CHART_KEY, WINRATE_CHART_WIDTH_KEY
+from helper import close_window, load_json
 
 # 1. 기존 차트 컴포넌트 (그대로 유지)
 class WinrateChart(QChartView):
@@ -99,3 +99,6 @@ class WinrateChartWindow(QMainWindow):
     self.chart_view.update_data(self.winrate_history)
 
 
+  def closeEvent(self, event: QCloseEvent):
+    close_window(WINRATE_CHART_KEY)
+    event.accept()

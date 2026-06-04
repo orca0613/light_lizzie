@@ -1,10 +1,11 @@
 import pandas as pd
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QCloseEvent, QFont
 
 from analysis_bar import AnalysisBarWidget
 from api import get_analysis_data
-from helper import get_range_by_move_number, get_range_by_score, get_range_by_winrate, normalize_bluespot_score, normalize_delta_score, normalize_delta_winrate
+from constants import BLACK_ANALYSIS_WINDOW_KEY, WHITE_ANALYSIS_WINDOW_KEY
+from helper import close_window, get_range_by_move_number, get_range_by_score, get_range_by_winrate, normalize_bluespot_score, normalize_delta_score, normalize_delta_winrate
 
 class AnalysisWindow(QMainWindow):
   def __init__(self, color: str):
@@ -132,4 +133,10 @@ class AnalysisWindow(QMainWindow):
     bluespot_ratio = sliced_df["bs"].mean() * 100
 
     self.update_data(delta_winrate, delta_score, bluespot_ratio, count)
+
+
+  def closeEvent(self, event: QCloseEvent):
+    key = BLACK_ANALYSIS_WINDOW_KEY if self.color == "black" else WHITE_ANALYSIS_WINDOW_KEY
+    close_window(key)
+    event.accept()
 

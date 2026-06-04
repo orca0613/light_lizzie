@@ -11,17 +11,9 @@ headers = {
   "Origin": allowed_origin
 }
 
-def request_statistics_data(query: str):
-  url = f"{localhost}/katago-analysis/get-avr-data/{query}"
-  response = requests.get(url=url, headers=headers)
-  status_code = response.status_code
-  if status_code == 200:
-    return response.json()
-  return False
-
 
 def get_player_data(name: str):
-  url = f"{localhost}/player/get-by-name/{name}"
+  url = f"{api_url}/player/get-by-name/{name}"
   response = requests.get(url=url, headers=headers)
   status_code = response.status_code
   if status_code == 200:
@@ -30,7 +22,16 @@ def get_player_data(name: str):
 
 
 def get_analysis_data(player_code: int):
-  url = f"{localhost}/katago-analysis/get-analysis-data/{player_code}"
+  url = f"{api_url}/katago-analysis/get-analysis-data/{player_code}"
+  response = requests.get(url=url, headers=headers)
+  status_code = response.status_code
+  if status_code == 200:
+    return response.json()
+  return False
+
+
+def get_move_data(player_code: int):
+  url = f"{api_url}/opening-move/get-data/{player_code}"
   response = requests.get(url=url, headers=headers)
   status_code = response.status_code
   if status_code == 200:

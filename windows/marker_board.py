@@ -1,10 +1,10 @@
 
 from PySide6.QtWidgets import QMainWindow
-from PySide6.QtGui import QPainter, QColor, QPen, QRegion
-from PySide6.QtCore import QRect, QRectF, Qt
+from PySide6.QtGui import QCloseEvent, QPainter
+from PySide6.QtCore import QRectF, Qt
 
-from constants import BOARD_SIZE_KEY, DISPLAY_SETTING_JSON_PATH
-from helper import load_json
+from constants import BOARD_SIZE_KEY, DISPLAY_SETTING_JSON_PATH, MARKER_BOARD_KEY
+from helper import close_window, load_json
 
 class MarkerBoard(QMainWindow):
   def __init__(self):
@@ -70,3 +70,8 @@ class MarkerBoard(QMainWindow):
     self.board_size = setting_json[BOARD_SIZE_KEY]
     self.margin = self.board_size / 20
     self.resize(self.board_size, self.board_size)
+
+
+  def closeEvent(self, event: QCloseEvent):
+    close_window(MARKER_BOARD_KEY)
+    event.accept()

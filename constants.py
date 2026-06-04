@@ -27,6 +27,7 @@ IS_WHITE_FIRST_KEY = "is_white_first"
 WINRATE_BAR_KEY = "winrate_bar"
 WINRATE_CHART_KEY = "winrate_chart"
 MARKER_BOARD_KEY = "marker_board"
+OPENING_BOARD_KEY = "opening_board"
 BLACK_ANALYSIS_WINDOW_KEY = "black_analysis_window"
 WHITE_ANALYSIS_WINDOW_KEY = "white_analysis_window"
 

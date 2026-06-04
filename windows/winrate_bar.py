@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QMainWindow
-from PySide6.QtGui import QPainter, QColor, QPen, QLinearGradient, QFont
+from PySide6.QtGui import QCloseEvent, QPainter, QColor, QPen, QLinearGradient, QFont
 from PySide6.QtCore import Qt, QRectF
 
-from constants import DISPLAY_SETTING_JSON_PATH, IS_WHITE_FIRST_KEY, KATAGO_SETTING_JSON_PATH, WINRATE_BAR_HEIGHT_KEY, WINRATE_BAR_WIDTH_KEY
-from helper import load_json
+from constants import DISPLAY_SETTING_JSON_PATH, IS_WHITE_FIRST_KEY, WINRATE_BAR_HEIGHT_KEY, WINRATE_BAR_KEY, WINRATE_BAR_WIDTH_KEY
+from helper import close_window, load_json
 
 black_primary_color = "#000000"
 black_sub_color = "#2c2c2c"
@@ -125,3 +125,8 @@ class WinrateBar(QMainWindow):
     self.bar_width = setting_json[WINRATE_BAR_WIDTH_KEY]
     self.bar_height = setting_json[WINRATE_BAR_HEIGHT_KEY]
     self.resize(self.bar_width, self.bar_height)
+
+
+  def closeEvent(self, event: QCloseEvent):
+    close_window(WINRATE_BAR_KEY)
+    event.accept()

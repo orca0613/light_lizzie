@@ -38,7 +38,9 @@ class MainBoard(QMainWindow):
   update_display_setting_signal = Signal()
   update_player_name_signal = Signal(str, str)
   update_window_setting_signal = Signal()
+  update_position_signal = Signal(str)
   closed_signal = Signal()
+  
 
 
   def paintEvent(self, event):
@@ -128,6 +130,7 @@ class MainBoard(QMainWindow):
     if last_color == "B" or last_color == "W":
       data = black_zobrist_data if last_color == "B" else white_zobrist_data
       self.position ^= data[last_move]
+      self._send_position()
     self.repaint()
     self.undo_signal.emit()
 
@@ -135,6 +138,12 @@ class MainBoard(QMainWindow):
   def _update_position(self, loc: int):
     data = black_zobrist_data if self.move_number % 2 else white_zobrist_data
     self.position ^= data[loc]
+    self._send_position()
+
+
+  def _send_position(self):
+    ps_str = hex(self.position)[2:]
+    self.update_position_signal.emit(ps_str)
 
 
   def mousePressEvent(self, event):

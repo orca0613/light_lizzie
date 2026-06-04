@@ -1,9 +1,11 @@
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import json
 import os
 import re
 import sys
 
-from api import request_statistics_data
+from constants import WINDOW_OPTIONS_JSON_PATH
 
 
 def to_gtp_coord(x, y):
@@ -156,4 +158,27 @@ def normalize_delta_score(delta_score: float):
 def normalize_bluespot_score(bluespot_ratio: float):
   score = round(bluespot_ratio * 1.5, 1)
   return min(score, 100)
+
+
+def get_past_num_date(years: int, months: int) -> str:
+  now = datetime.now()
+  past_date = now - relativedelta(years=years, months=months)
+  refined = past_date.strftime('%Y%m%d')
+  return int(refined)
+
+
+def close_window(key: str):
+  window_option_json = load_json(WINDOW_OPTIONS_JSON_PATH)
+  if key == "all":
+    for window in window_option_json.keys():
+      window_option_json[window] = False
   
+  if key in window_option_json.keys():
+    window_option_json[key] = False
+  
+  update_json(WINDOW_OPTIONS_JSON_PATH, window_option_json)
+  return
+  
+
+  
+

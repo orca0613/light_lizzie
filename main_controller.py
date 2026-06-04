@@ -4,12 +4,13 @@ from typing import Dict
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QTimer
 from api import get_player_data
-from constants import BLACK_ANALYSIS_WINDOW_KEY, DISPLAY_SETTING_JSON_PATH, KATAGO_SETTING_JSON_PATH, KATAGO_VAR_PATH, KOMI_KEY, MARKER_BOARD_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, RULE_KEY, UPDATE_CYCLE_KEY, WHITE_ANALYSIS_WINDOW_KEY, WINDOW_OPTIONS_JSON_PATH, WINRATE_BAR_KEY, WINRATE_CHART_KEY
+from constants import BLACK_ANALYSIS_WINDOW_KEY, DISPLAY_SETTING_JSON_PATH, KATAGO_SETTING_JSON_PATH, KATAGO_VAR_PATH, KOMI_KEY, MARKER_BOARD_KEY, MAX_ANALYSIS_TIME_KEY, MAX_VISIT_KEY, OPENING_BOARD_KEY, RULE_KEY, UPDATE_CYCLE_KEY, WHITE_ANALYSIS_WINDOW_KEY, WINDOW_OPTIONS_JSON_PATH, WINRATE_BAR_KEY, WINRATE_CHART_KEY
 from engine import KataGoGTP
-from helper import get_best_from_katago_response, load_json, to_gtp_coord, update_json
+from helper import close_window, get_best_from_katago_response, get_past_num_date, load_json, to_gtp_coord, update_json
 from windows.analysis import AnalysisWindow
 from windows.main_board import MainBoard
 from windows.marker_board import MarkerBoard
+from windows.opening_data_board import OpeningDataBoard
 from windows.winrate_bar import WinrateBar
 from windows.winrate_chart import WinrateChartWindow
 
@@ -21,15 +22,20 @@ class MainController:
     # 윈도우 창 설정
     
     self.main_board = MainBoard()
+    self.marker_board = MarkerBoard()
+    self.opening_data_board = OpeningDataBoard()
+
     self.winrate_bar = WinrateBar()
     self.winrate_chart = WinrateChartWindow()
-    self.marker_board = MarkerBoard()
+
     self.black_analysis_window = AnalysisWindow("black")
     self.white_analysis_window = AnalysisWindow("white")
+
     self.sub_windows = [
       self.winrate_bar, 
       self.winrate_chart,
       self.marker_board, 
+      self.opening_data_board,
       self.black_analysis_window, 
       self.white_analysis_window
     ]
@@ -43,6 +49,7 @@ class MainController:
     self.main_board.update_display_setting_signal.connect(self._update_display_setting)
     self.main_board.update_player_name_signal.connect(self._update_player)
     self.main_board.update_window_setting_signal.connect(self._update_window_setting)
+    self.main_board.update_position_signal.connect(self._update_position)
     self.main_board.closed_signal.connect(self._close_windows)
 
     # 엔진 및 카타고 분석 변수 설정
@@ -195,6 +202,7 @@ class MainController:
   def _update_display_setting(self):
     self.main_board.update_board_display()
     self.marker_board.update_board_display()
+    self.opening_data_board.update_board_display()
     self.winrate_bar.update_bar_display()
 
 
@@ -204,19 +212,28 @@ class MainController:
     if black_player:
       black_code = black_player["playerCode"]
       self.black_analysis_window.update_player(black, black_code)
+      self.opening_data_board.update_black_data(black_code)
     else:
       QMessageBox.warning(self.main_board, "경고", "흑 플레이어를 찾을 수 없습니다.")
       self.black_analysis_window.update_player("", 0)
     if white_player:
       white_code = white_player["playerCode"]
       self.white_analysis_window.update_player(white, white_code)
+      self.opening_data_board.update_white_data(white_code)
     else:
       QMessageBox.warning(self.main_board, "경고", "백 플레이어를 찾을 수 없습니다.")
       self.white_analysis_window.update_player("", 0)
 
 
   def _update_window_setting(self):
-    sub_window_keys = [WINRATE_BAR_KEY, WINRATE_CHART_KEY, MARKER_BOARD_KEY, BLACK_ANALYSIS_WINDOW_KEY, WHITE_ANALYSIS_WINDOW_KEY]
+    sub_window_keys = [
+      WINRATE_BAR_KEY, 
+      WINRATE_CHART_KEY, 
+      MARKER_BOARD_KEY,
+      OPENING_BOARD_KEY,
+      BLACK_ANALYSIS_WINDOW_KEY, 
+      WHITE_ANALYSIS_WINDOW_KEY
+    ]
     window_options_json = load_json(WINDOW_OPTIONS_JSON_PATH)
     for i, key in enumerate(sub_window_keys):
       if window_options_json[key]:
@@ -235,12 +252,14 @@ class MainController:
     else:
       self.black_analysis_window.update_data(delta_winrate, delta_score, bluespot_ratio, count)
 
+  
+  def _update_position(self, ps: str):
+    self.opening_data_board.update_position(ps, self.main_board.move_number)
+
 
   def _close_windows(self):
-    window_options_json = load_json(WINDOW_OPTIONS_JSON_PATH)
-    for key in window_options_json.keys():
-      window_options_json[key] = False
-    update_json(WINDOW_OPTIONS_JSON_PATH, window_options_json)
+    close_window("all")
+    self.opening_data_board.close()
     for window in self.sub_windows:
       window.close()
 
