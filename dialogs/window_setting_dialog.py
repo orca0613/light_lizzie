@@ -4,7 +4,8 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QPushButton, QVBoxLayout
 from constants import (
   BLACK_ANALYSIS_WINDOW_KEY,
   MARKER_BOARD_KEY,
-  OPENING_BOARD_KEY,
+  OPENING_DATA_BOARD_KEY,
+  PREDICTION_BOARD_KEY,
   SHOW_OPTIONS,
   WHITE_ANALYSIS_WINDOW_KEY,
   WINDOW_OPTIONS_JSON_PATH,
@@ -23,68 +24,81 @@ class WindowSettingDialog(QDialog):
     self.option_json = load_json(WINDOW_OPTIONS_JSON_PATH)
     self.changed = False
 
+    self.winrate_bar_idx = 0
+    self.winrate_chart_idx = 0
+    self.marker_board_idx = 0
+    self.opening_data_board_idx = 0
+    self.prediction_board_idx = 0
+    self.black_analysis_window_idx = 0
+    self.white_analysis_window_idx = 0
+
+    self.update_option()
+
     # 메인 레이아웃 (Vertical)
     layout = QVBoxLayout(self)
-    winrate_bar_idx = 1 if self.option_json[WINRATE_BAR_KEY] else 0
-    winrate_chart_idx = 1 if self.option_json[WINRATE_CHART_KEY] else 0
-    marker_board_idx = 1 if self.option_json[MARKER_BOARD_KEY] else 0
-    opening_board_idx = 1 if self.option_json[OPENING_BOARD_KEY] else 0
-    black_analysis_window_idx = 1 if self.option_json[BLACK_ANALYSIS_WINDOW_KEY] else 0
-    white_analysis_window_idx = 1 if self.option_json[WHITE_ANALYSIS_WINDOW_KEY] else 0
 
     self.winrate_bar_group = RadioGroupWidget(
       200,
       "승률 그래프",
       SHOW_OPTIONS,
-      winrate_bar_idx,
-      self._update_winrate_bar_option,
+      self.winrate_bar_idx,
+      lambda idx: self._change_option(bool(idx), WINRATE_BAR_KEY),
       self,
     )
     self.winrate_chart_group = RadioGroupWidget(
       200,
       "승률 차트",
       SHOW_OPTIONS,
-      winrate_chart_idx,
-      self._update_winrate_chart_option,
+      self.winrate_chart_idx,
+      lambda idx: self._change_option(bool(idx), WINRATE_CHART_KEY),
       self,
     )
     self.marker_board_group = RadioGroupWidget(
       200,
       "마커 보드",
       SHOW_OPTIONS,
-      marker_board_idx,
-      self._update_marker_board_option,
+      self.marker_board_idx,
+      lambda idx: self._change_option(bool(idx), MARKER_BOARD_KEY),
       self,
     )
-    self.opening_board_group = RadioGroupWidget(
+    self.opening_data_board_group = RadioGroupWidget(
       200,
       "포석 분포",
       SHOW_OPTIONS,
-      opening_board_idx,
-      self._update_opening_board_option,
+      self.opening_data_board_idx,
+      lambda idx: self._change_option(bool(idx), OPENING_DATA_BOARD_KEY),
+      self,
+    )
+    self.prediction_board_group = RadioGroupWidget(
+      200,
+      "착수 예측",
+      SHOW_OPTIONS,
+      self.prediction_board_idx,
+      lambda idx: self._change_option(bool(idx), PREDICTION_BOARD_KEY),
       self,
     )
     self.black_analysis_window_group = RadioGroupWidget(
       200,
       "흑 분석창",
       SHOW_OPTIONS,
-      black_analysis_window_idx,
-      self._update_black_analysis_window_option,
+      self.black_analysis_window_idx,
+      lambda idx: self._change_option(bool(idx), BLACK_ANALYSIS_WINDOW_KEY),
       self,
     )
     self.white_analysis_window_group = RadioGroupWidget(
       200,
       "백 분석창",
       SHOW_OPTIONS,
-      white_analysis_window_idx,
-      self._update_white_analysis_window_option,
+      self.white_analysis_window_idx,
+      lambda idx: self._change_option(bool(idx), WHITE_ANALYSIS_WINDOW_KEY),
       self,
     )
 
     layout.addWidget(self.winrate_bar_group)
     layout.addWidget(self.winrate_chart_group)
     layout.addWidget(self.marker_board_group)
-    layout.addWidget(self.opening_board_group)
+    layout.addWidget(self.opening_data_board_group)
+    layout.addWidget(self.prediction_board_group)
     layout.addWidget(self.black_analysis_window_group)
     layout.addWidget(self.white_analysis_window_group)
 
@@ -100,35 +114,19 @@ class WindowSettingDialog(QDialog):
 
   update_window_setting_signal = Signal()
 
-  def _update_winrate_bar_option(self, idx: int):
-    self.changed = True
-    self.option_json[WINRATE_BAR_KEY] = bool(idx)
-    return
+  def update_option(self):
+    option_json = load_json(WINDOW_OPTIONS_JSON_PATH)
+    self.winrate_bar_idx = 1 if option_json[WINRATE_BAR_KEY] else 0
+    self.winrate_chart_idx = 1 if option_json[WINRATE_CHART_KEY] else 0
+    self.marker_board_idx = 1 if option_json[MARKER_BOARD_KEY] else 0
+    self.opening_data_board_idx = 1 if option_json[OPENING_DATA_BOARD_KEY] else 0
+    self.prediction_board_idx = 1 if option_json[PREDICTION_BOARD_KEY] else 0
+    self.black_analysis_window_idx = 1 if option_json[BLACK_ANALYSIS_WINDOW_KEY] else 0
+    self.white_analysis_window_idx = 1 if option_json[WHITE_ANALYSIS_WINDOW_KEY] else 0
 
-  def _update_winrate_chart_option(self, idx: int):
+  def _change_option(self, val: bool, key: str):
     self.changed = True
-    self.option_json[WINRATE_CHART_KEY] = bool(idx)
-    return
-
-  def _update_marker_board_option(self, idx: int):
-    self.changed = True
-    self.option_json[MARKER_BOARD_KEY] = bool(idx)
-    return
-
-  def _update_opening_board_option(self, idx: int):
-    self.changed = True
-    self.option_json[OPENING_BOARD_KEY] = bool(idx)
-    return
-
-  def _update_black_analysis_window_option(self, idx: int):
-    self.changed = True
-    self.option_json[BLACK_ANALYSIS_WINDOW_KEY] = bool(idx)
-    return
-
-  def _update_white_analysis_window_option(self, idx: int):
-    self.changed = True
-    self.option_json[WHITE_ANALYSIS_WINDOW_KEY] = bool(idx)
-    return
+    self.option_json[key] = val
 
   def _confirm(self):
     if self.changed:

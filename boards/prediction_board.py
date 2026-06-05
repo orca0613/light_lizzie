@@ -22,7 +22,7 @@ def get_color_by_similarity(similarity: float):
 class PredictionBoard(BaseGoBoard):
   def __init__(self, parent=None):
     super().__init__(parent)
-    self.transparent_mode = False  # 나무판 배경 필수
+    self.transparent_mode = True  # 나무판 배경 필수
     self.prediction_list = []
 
   def initialize(self):

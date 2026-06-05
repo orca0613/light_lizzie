@@ -1,13 +1,12 @@
-from PySide6.QtCore import Signal
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QMainWindow
 
 from boards.prediction_board import PredictionBoard
+from constants import PREDICTION_BOARD_KEY
+from helper import close_window
 
 
 class PredictionBoardWindow(QMainWindow):
-  closed_signal = Signal()
-
   def __init__(self):
     super().__init__()
     self.board = PredictionBoard(self)
@@ -21,6 +20,5 @@ class PredictionBoardWindow(QMainWindow):
     self.board.set_prediction_list(prediction_list)
 
   def closeEvent(self, event: QCloseEvent):
-    """창이 닫힐 때 PySide6가 자동으로 호출하는 함수"""
-    self.closed_signal.emit()  # 컨트롤러에게 신호 발송
+    close_window(PREDICTION_BOARD_KEY)
     event.accept()  # 창 닫기 승인

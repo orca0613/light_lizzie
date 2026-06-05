@@ -6,7 +6,7 @@ from boards.base_board import BaseGoBoard
 class MarkerBoard(BaseGoBoard):
   def __init__(self, parent=None):
     super().__init__(parent)
-    self.transparent_mode = False  # 나무판 배경 필수
+    self.transparent_mode = False
     self.last_move = None
 
   def set_last_move(self, x, y):

@@ -22,7 +22,7 @@ def get_color_by_frequency(freq: float):
 class OpeningDataBoard(BaseGoBoard):
   def __init__(self, parent=None):
     super().__init__(parent)
-    self.transparent_mode = False
+    self.transparent_mode = True
     self.opening_data = []
 
   def initialize(self):
@@ -44,14 +44,8 @@ class OpeningDataBoard(BaseGoBoard):
       radius = self.cell_size * 0.45
       move_rect = QRectF(center_x - radius, center_y - radius, radius * 2, radius * 2)
 
-      # 1. 커스텀 컬러 및 투명도 설정 (Red, Green, Blue, Alpha)
-      # Alpha 값은 0(완전 투명) ~ 255(완전 불투명) 사이로 조절합니다.
-
       painter.setBrush(circle_color)
-
-      # 원 테두리 색상 설정 (원하는 경우 테두리는 투명하게 없앨 수도 있습니다: Qt.PenStyle.NoPen)
       painter.setPen(circle_color)
-
       painter.drawEllipse(move_rect)
 
       # 1. 표시할 각각의 변수 설정

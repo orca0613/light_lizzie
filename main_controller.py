@@ -15,7 +15,8 @@ from constants import (
   MARKER_BOARD_KEY,
   MAX_ANALYSIS_TIME_KEY,
   MAX_VISIT_KEY,
-  OPENING_BOARD_KEY,
+  OPENING_DATA_BOARD_KEY,
+  PREDICTION_BOARD_KEY,
   RULE_KEY,
   UPDATE_CYCLE_KEY,
   WHITE_ANALYSIS_WINDOW_KEY,
@@ -52,7 +53,7 @@ class MainController:
     self.main_board_window = MainBoardWindow()
     self.marker_board_window = MarkerBoardWindow()
     self.opening_data_board_window = OpeningDataBoardWindow()
-    self.prediction_board = PredictionBoardWindow()
+    self.prediction_board_window = PredictionBoardWindow()
 
     self.winrate_bar = WinrateBar()
     self.winrate_chart = WinrateChartWindow()
@@ -65,6 +66,7 @@ class MainController:
       self.winrate_chart,
       self.marker_board_window,
       self.opening_data_board_window,
+      self.prediction_board_window,
       self.black_analysis_window,
       self.white_analysis_window,
     ]
@@ -188,7 +190,7 @@ class MainController:
       analysis_data = analysis_window.get_data()
       target_data = get_target_data(winrate, score, complexity, analysis_data)
       similar_moves = get_similar_moves(info_blocks, target_data)
-      self.prediction_board.set_prediction_list(similar_moves)
+      self.prediction_board_window.set_prediction_list(similar_moves)
       return
     if is_white_turn:
       winrate = 100 - winrate
@@ -256,7 +258,7 @@ class MainController:
 
   def _start_analyze(self):
     self.engine.start_analyze()
-    self.prediction_board.initialize()
+    self.prediction_board_window.initialize()
     self.engine_running = True
     self.analysis_time = time.time()
 
@@ -278,18 +280,12 @@ class MainController:
       self.black_analysis_window.update_player(black, black_code)
       self.opening_data_board_window.update_black_data(black_code)
     else:
-      QMessageBox.warning(
-        self.main_board_window, "경고", "흑 플레이어를 찾을 수 없습니다."
-      )
       self.black_analysis_window.update_player("", 0)
     if white_player:
       white_code = white_player["playerCode"]
       self.white_analysis_window.update_player(white, white_code)
       self.opening_data_board_window.update_white_data(white_code)
     else:
-      QMessageBox.warning(
-        self.main_board_window, "경고", "백 플레이어를 찾을 수 없습니다."
-      )
       self.white_analysis_window.update_player("", 0)
 
   def _update_window_setting(self):
@@ -297,7 +293,8 @@ class MainController:
       WINRATE_BAR_KEY,
       WINRATE_CHART_KEY,
       MARKER_BOARD_KEY,
-      OPENING_BOARD_KEY,
+      OPENING_DATA_BOARD_KEY,
+      PREDICTION_BOARD_KEY,
       BLACK_ANALYSIS_WINDOW_KEY,
       WHITE_ANALYSIS_WINDOW_KEY,
     ]
@@ -340,6 +337,5 @@ if __name__ == "__main__":
   # 컨트롤러 생성 및 실행
   controller = MainController()
   controller.main_board_window.show()
-  controller.prediction_board.show()
 
   sys.exit(app.exec())

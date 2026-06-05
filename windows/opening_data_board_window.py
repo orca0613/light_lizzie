@@ -1,17 +1,14 @@
 import pandas as pd
-from PySide6.QtCore import Signal
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QMainWindow
 
 from api import get_move_data
 from boards.opening_data_board import OpeningDataBoard
-from constants import BOARD_SIZE_KEY, DISPLAY_SETTING_JSON_PATH, OPENING_BOARD_KEY
+from constants import BOARD_SIZE_KEY, DISPLAY_SETTING_JSON_PATH, OPENING_DATA_BOARD_KEY
 from helper import close_window, get_past_num_date, load_json
 
 
 class OpeningDataBoardWindow(QMainWindow):
-  closed_signal = Signal()
-
   def __init__(self):
     super().__init__()
     self.board = OpeningDataBoard(self)
@@ -74,5 +71,5 @@ class OpeningDataBoardWindow(QMainWindow):
     self.resize(self.board_size, self.board_size)
 
   def closeEvent(self, event: QCloseEvent):
-    close_window(OPENING_BOARD_KEY)
+    close_window(OPENING_DATA_BOARD_KEY)
     event.accept()

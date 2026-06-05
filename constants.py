@@ -27,10 +27,9 @@ IS_WHITE_FIRST_KEY = "is_white_first"
 WINRATE_BAR_KEY = "winrate_bar"
 WINRATE_CHART_KEY = "winrate_chart"
 MARKER_BOARD_KEY = "marker_board"
-OPENING_BOARD_KEY = "opening_board"
-MOVE_PREDICTOR_KEY = "move_predictor"
+OPENING_DATA_BOARD_KEY = "opening_data_board"
+PREDICTION_BOARD_KEY = "prediction_board"
 BLACK_ANALYSIS_WINDOW_KEY = "black_analysis_window"
 WHITE_ANALYSIS_WINDOW_KEY = "white_analysis_window"
 
 ANALYZE_COMMAND = "kata-analyze 10"
-
