@@ -3,3 +3,4 @@ __pycache__
 gtp_logs
 dialogs/__pycache__
 windows/__pycache__
+json_files

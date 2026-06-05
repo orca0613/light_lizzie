@@ -6,9 +6,9 @@ def get_neighbors(loc: int) -> List[int]:
   y, x = loc // 19, loc % 19
   neighbors = []
   if y > 0:
-    neighbors.append(loc)
+    neighbors.append(loc - 19)
   if y < 18:
-    neighbors.append(loc)
+    neighbors.append(loc + 19)
   if x > 0:
     neighbors.append(loc - 1)
   if x < 18:

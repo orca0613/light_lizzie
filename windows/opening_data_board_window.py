@@ -1,5 +1,5 @@
 import pandas as pd
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, Qt
 from PySide6.QtWidgets import QMainWindow
 
 from api import get_move_data
@@ -12,8 +12,9 @@ class OpeningDataBoardWindow(QMainWindow):
   def __init__(self):
     super().__init__()
     self.board = OpeningDataBoard(self)
-    self.setWindowTitle("Opening Data Board")
     self.setCentralWidget(self.board)
+    self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+
     self.black_code = 0
     self.white_code = 0
     self.black_data = None
@@ -22,6 +23,20 @@ class OpeningDataBoardWindow(QMainWindow):
     self.ref_date = get_past_num_date(5, 0)
     self.ps = "0"
     self.move_number = 0
+
+  def mousePressEvent(self, event):
+    # 마우스 클릭 시 창의 원래 위치와 마우스 커서 위치의 차이(오프셋)를 저장
+    if event.button() == Qt.MouseButton.LeftButton:
+      self.drag_position = (
+        event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+      )
+      event.accept()
+
+  def mouseMoveEvent(self, event):
+    # 마우스를 누른 채 움직이면 창을 같이 이동시킴
+    if event.buttons() == Qt.MouseButton.LeftButton:
+      self.move(event.globalPosition().toPoint() - self.drag_position)
+      event.accept()
 
   def update_black_data(self, player_code):
     if player_code == self.black_code:
